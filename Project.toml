@@ -1,10 +1,7 @@
-name = "AlgebraStreamFrames"
+name = "AlgebraStreams"
 uuid = "d4c27f99-a9f1-4f28-820c-c3ebc43fb045"
 authors = ["emmac "]
 version = "0.1.0"
 
 [deps]
-Algia = "91245b94-7320-4a9d-ac3a-8d3b3e6674af"
-
-[compat]
-Algia = "0.1.0"
+AlgebraFrames = "91245b94-7320-4a9d-ac3a-8d3b3e6674af"

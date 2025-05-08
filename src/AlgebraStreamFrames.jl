@@ -1,7 +1,7 @@
-module AlgebraStreamFrames
+module AlgebraStreams
 using AlgebraFrames
 
-SUPPORTED_FILES = [:ff, :csv]
+SUPPORTED_FILES = [:ff, :csv, :json]
 
 function infer_type(fp::String)
     if fp == ""

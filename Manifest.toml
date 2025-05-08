@@ -2,11 +2,9 @@
 
 julia_version = "1.11.0-rc3"
 manifest_format = "2.0"
-project_hash = "65f6f22d6f5a5cc9a0a76b3e162886135f13a6c0"
+project_hash = "7e232863c31929190d5fd288f2e6f2ef660269fd"
 
-[[deps.Algia]]
-git-tree-sha1 = "36c5429d35366a0237d780af438b89db2ee50a74"
-repo-rev = "main"
-repo-url = "../AlgebraFrames.jl"
+[[deps.AlgebraFrames]]
+path = "../AlgebraFrames.jl"
 uuid = "91245b94-7320-4a9d-ac3a-8d3b3e6674af"
 version = "0.1.0"
