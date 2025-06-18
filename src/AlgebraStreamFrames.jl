@@ -1,4 +1,4 @@
-module AlgebraStreams
+module AlgebraStreamFrames
 using AlgebraFrames
 using AlgebraFrames: Transform
 
@@ -26,13 +26,13 @@ mutable struct StreamFrame{T <: Any} <: AlgebraFrames.AbstractAlgebraFrame
 	length::Int64
     T::Vector{Type}           
 	names::Vector{String}
-    gen::Vector{Function}     
-	         
+    gen::Vector{Function}  
 	transformations::Vector{Transform}
+    offsets::Int64
     function StreamFrame{T}(n::Int64, info::Dict{String, String}, names::Vector{String}, 
-        gen::Vector{Function}, types::Vector{Type}, transforms::Vector{AlgebraFrames.Transform} = 
-        Vector{Transform}())
-        new{T}(info, n, names, types, transforms)
+        gen::Vector{Function}, types::Vector{<:Any}, transforms::Vector{AlgebraFrames.Transform} = 
+        Vector{Transform}()) where {T}
+        new{T}(info, n, Vector{Type}(types), names, gen, transforms, 0)
     end
 end
 
@@ -56,12 +56,14 @@ function StreamFrame(named_paths::Pair{String, String} ...)
         infer_type(readlines(fp)[1])
     end for fp in values(paths)]  # Infer types
     gen::Vector{Function} = [begin 
+        T = types[enum]
         if T == String
             e::Int64 -> readlines(paths[names[enum]])[e]
         else
             e::Int64 -> parse(T, readlines(paths[names[enum]])[e])
         end
     end for enum in 1:length(names)]
+    @info types
     StreamFrame{Symbol(:feature_file)}(n, paths, names, gen, types)  # Default type
 end
 
@@ -77,7 +79,7 @@ function StreamFrame(path::String)
     types = [eltype(col) for col in values(data)]
 
     paths = Dict(name => path for name in names)  # Single-file storage
-    StreamFrame{T}(n, paths names, types)
+    StreamFrame{T}(n, paths, names, types)
 end
 
 struct DataFileType{T} end
@@ -94,5 +96,5 @@ function algebraic_read(T::Type{DataFileType{:csv}}, path::String)
     StreamFrame{:csv}()
 end
 
-
+export StreamFrame, generate, algebra!, algebra, set_generator!
 end # module AlgebraStreamFrames
