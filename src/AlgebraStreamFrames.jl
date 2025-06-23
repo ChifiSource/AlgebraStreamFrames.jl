@@ -21,6 +21,8 @@ function infer_type(fp::String)
     end
 end
 
+struct StreamDataType{T} end
+
 mutable struct StreamFrame{T <: Any} <: AlgebraFrames.AbstractAlgebraFrame
 	paths::Dict{String, String} 
 	length::Int64
@@ -36,35 +38,57 @@ mutable struct StreamFrame{T <: Any} <: AlgebraFrames.AbstractAlgebraFrame
     end
 end
 
+function get_datatype(std::Type{StreamDataType{:Integer}})
+    Int64
+end
+
+function get_datatype(std::Type{StreamDataType{:Float}})
+    Float64
+end
+
+function get_datatype(std::Type{StreamDataType{:String}})
+    String
+end
+
+function get_datatype(std::Type{StreamDataType{:Bool}})
+    Bool
+end
+
 function StreamFrame(named_paths::Pair{String, String} ...)
-    paths = Dict(named_paths...)
+    paths = Dict{String, String}(named_paths...)
     names = collect(keys(paths))
     first_file = first(values(paths))
     if ~(isfile(first_file))
         touch(first_file)
     end
     n = countlines(first_file)  # Assume all files have same row count
-    if n == 0
-        return(StreamFrame{Symbol(:feature_file)}(paths,
-            n, names, Vector{Symbol}(), Vector{Algebra{<:Any, 1}}()))
-    end
-    types = [begin
+    types::Vector{Type} = Vector{Type}([begin
         if ~(isfile(fp))
             touch(fp)
         end
-        @info fp
-        infer_type(readlines(fp)[1])
-    end for fp in values(paths)]  # Infer types
-    gen::Vector{Function} = [begin 
+        data_type = StreamDataType{Symbol(readlines(fp)[1])}
+        get_datatype(data_type)
+    end for fp in values(paths)])  # Infer types
+    gen::Vector{Function} = Vector{Function}([begin 
         T = types[enum]
         if T == String
-            e::Int64 -> readlines(paths[names[enum]])[e]
+            e::Int64 -> readlines(paths[names[enum]])[e + 1]
         else
-            e::Int64 -> parse(T, readlines(paths[names[enum]])[e])
+            e::Int64 -> parse(T, readlines(paths[names[enum]])[e + 1])
         end
-    end for enum in 1:length(names)]
-    @info types
-    StreamFrame{Symbol(:feature_file)}(n, paths, names, gen, types)  # Default type
+    end for enum in 1:length(names)])
+    StreamFrame{:ff}(n, paths, names, gen, types, 
+        Vector{Transform}())::StreamFrame{:ff}
+end
+
+function StreamFrame{T}() where {T == :ff}
+    StreamFrame{:ff}(0, Dict{String, String}(), 
+        Vector{String}(), Vector{Function}(), Vector{Type}(), 
+        Vector{Transform}())::StreamFrame{:ff}
+end
+
+function join!(sf::StreamFrame, path::)
+
 end
 
 function StreamFrame(path::String)
