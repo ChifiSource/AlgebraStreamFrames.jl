@@ -61,7 +61,7 @@ function StreamFrame(named_paths::Pair{String, String} ...)
     if ~(isfile(first_file))
         touch(first_file)
     end
-    n = countlines(first_file)  # Assume all files have same row count
+    n = countlines(first_file) - 1  # Assume all files have same row count
     types::Vector{Type} = Vector{Type}([begin
         if ~(isfile(fp))
             touch(fp)
@@ -81,14 +81,35 @@ function StreamFrame(named_paths::Pair{String, String} ...)
         Vector{Transform}())::StreamFrame{:ff}
 end
 
-function StreamFrame{T}() where {T == :ff}
+function StreamFrame{T}() where {T}
     StreamFrame{:ff}(0, Dict{String, String}(), 
         Vector{String}(), Vector{Function}(), Vector{Type}(), 
         Vector{Transform}())::StreamFrame{:ff}
 end
 
-function join!(sf::StreamFrame, path::)
+function join!(sf::StreamFrame, namepath::Pair{String, String})
+    lns = countlines(namepath[2])
+    if ~(length(lns) == length(sf))
+        throw(DimensionMismatch())
+    end
+    push!(sf.paths, namepath)
+    push!(sf.names, namepath[1])
+    gen = e::Int64 -> readlines(namepath[2])[e + 1]
+    push!(sf.gen, gen)
+    T = get_datatype(StreamDataType{Symbol(readlines(namepath[2])[1])})
+    push!(sf.T, T)
+end
 
+function join!(sf::StreamFrame, T::Type{<:Any}, namepath::Pair{String, String})
+    lns = countlines(namepath[2])
+    if ~(lns - 1 == length(sf))
+        throw(DimensionMismatch("$lns, length of file, does not equal $(length(sf))"))
+    end
+    gen = e::Int64 -> readlines(namepath[2])[e + 1]
+    push!(sf.gen, gen)
+    push!(sf.paths, namepath)
+    push!(sf.names, namepath[1])
+    push!(sf.T, T)
 end
 
 function StreamFrame(path::String)
@@ -120,5 +141,5 @@ function algebraic_read(T::Type{DataFileType{:csv}}, path::String)
     StreamFrame{:csv}()
 end
 
-export StreamFrame, generate, algebra!, algebra, set_generator!
+export StreamFrame, generate, algebra!, algebra, set_generator!, join!
 end # module AlgebraStreamFrames
