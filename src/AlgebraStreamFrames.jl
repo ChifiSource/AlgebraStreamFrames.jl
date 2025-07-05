@@ -1,6 +1,7 @@
 module AlgebraStreamFrames
 using AlgebraFrames
 using AlgebraFrames: Transform
+import AlgebraFrames: join!, join, deleteat!
 
 function infer_type(fp::String)
     if fp == ""
@@ -110,6 +111,13 @@ function join!(sf::StreamFrame, T::Type{<:Any}, namepath::Pair{String, String})
     push!(sf.paths, namepath)
     push!(sf.names, namepath[1])
     push!(sf.T, T)
+end
+
+function deleteat!(sf::StreamFrame, r::UnitRange{Int64}; write::Bool = true)
+    
+    if write
+
+    end
 end
 
 function StreamFrame(path::String)
