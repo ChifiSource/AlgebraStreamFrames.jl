@@ -1,7 +1,7 @@
 module AlgebraStreamFrames
 using AlgebraFrames
 using AlgebraFrames: Transform
-import AlgebraFrames: join!, join, deleteat!
+import AlgebraFrames: join!, join, deleteat!, generate
 
 function infer_type(fp::String)
     if fp == ""
@@ -62,7 +62,8 @@ function StreamFrame(named_paths::Pair{String, String} ...)
     if ~(isfile(first_file))
         touch(first_file)
     end
-    n = countlines(first_file) - 1  # Assume all files have same row count
+    filts = filter!(x -> x != "" && x != "\n" && x != " ", readlines(first_file))
+    n = length(filts) - 1
     types::Vector{Type} = Vector{Type}([begin
         if ~(isfile(fp))
             touch(fp)
@@ -72,16 +73,36 @@ function StreamFrame(named_paths::Pair{String, String} ...)
     end for fp in values(paths)])  # Infer types
     gen::Vector{Function} = Vector{Function}([begin 
         T = types[enum]
+        lines = filter!(x -> is_emptystr(x), 
+            readlines(paths[names[enum]]))
         if T == String
-            e::Int64 -> readlines(paths[names[enum]])[e + 1]
+            e::Int64 -> begin
+                lines = filter!(x -> is_emptystr(x), 
+                    readlines(paths[names[enum]]))
+                lines[e + 1]
+            end
         else
-            e::Int64 -> parse(T, readlines(paths[names[enum]])[e + 1])
+            e::Int64 -> begin
+                lines = filter!(x -> is_emptystr(x), 
+                    readlines(paths[names[enum]]))
+                parse(T, lines[e + 1])
+            end
         end
     end for enum in 1:length(names)])
     StreamFrame{:ff}(n, paths, names, gen, types, 
         Vector{Transform}())::StreamFrame{:ff}
 end
 
+function is_emptystr(str::AbstractString)
+    found = findfirst(c::Char -> c != ' ' && c != '\n', str)
+    ~(isnothing(found))
+end
+
+#==
+function generate(fr::StreamFrame)
+
+end
+==#
 function StreamFrame{T}() where {T}
     StreamFrame{:ff}(0, Dict{String, String}(), 
         Vector{String}(), Vector{Function}(), Vector{Type}(), 
@@ -95,7 +116,9 @@ function join!(sf::StreamFrame, namepath::Pair{String, String})
     end
     push!(sf.paths, namepath)
     push!(sf.names, namepath[1])
-    gen = e::Int64 -> readlines(namepath[2])[e + 1]
+    gen = e::Int64 -> begin 
+        readlines(namepath[2])[e + 1]
+    end
     push!(sf.gen, gen)
     T = get_datatype(StreamDataType{Symbol(readlines(namepath[2])[1])})
     push!(sf.T, T)
@@ -106,7 +129,23 @@ function join!(sf::StreamFrame, T::Type{<:Any}, namepath::Pair{String, String})
     if ~(lns - 1 == length(sf))
         throw(DimensionMismatch("$lns, length of file, does not equal $(length(sf))"))
     end
-    gen = e::Int64 -> readlines(namepath[2])[e + 1]
+    this_p = namepath[2]
+    lines = filter!(x -> is_emptystr(x), 
+            readlines(this_p))
+    n = length(lines) - 1
+    gen = if T == String
+        e::Int64 -> begin
+                lines = filter!(x -> is_emptystr(x), 
+                    readlines(this_p))
+            lines[e + 1]
+        end
+    else
+        e::Int64 -> begin
+            lines = filter!(x -> is_emptystr(x), 
+                    readlines(this_p))
+            parse(T, lines[e + 1])
+        end
+    end
     push!(sf.gen, gen)
     push!(sf.paths, namepath)
     push!(sf.names, namepath[1])
