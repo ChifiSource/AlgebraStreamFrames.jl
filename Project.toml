@@ -5,3 +5,7 @@ version = "0.1.0"
 
 [deps]
 AlgebraFrames = "91245b94-7320-4a9d-ac3a-8d3b3e6674af"
+
+[compat]
+julia="1.8"
+AlgebraFrames = "0.1.1"
