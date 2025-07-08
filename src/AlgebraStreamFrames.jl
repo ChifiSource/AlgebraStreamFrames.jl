@@ -1,8 +1,8 @@
 module AlgebraStreamFrames
 using AlgebraFrames
 using AlgebraFrames: Transform
-import AlgebraFrames: join!, join, deleteat!, generate, drop!
-import Base: getindex, setindex!
+import AlgebraFrames: join!, join, deleteat!, generate, drop!, framerows
+import Base: getindex, setindex!, filter!, filter
 
 function infer_type(fp::String)
     if fp == ""
@@ -100,11 +100,7 @@ function is_emptystr(str::AbstractString)
 end
 
 include("frameops.jl")
-#==
-function generate(fr::StreamFrame)
 
-end
-==#
 function StreamFrame{T}() where {T}
     StreamFrame{:ff}(0, Dict{String, String}(), 
         Vector{String}(), Vector{Function}(), Vector{Type}(), 

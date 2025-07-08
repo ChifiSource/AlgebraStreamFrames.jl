@@ -84,8 +84,15 @@ function getindex(sf::StreamFrame, cols::UnitRange{Int64} = 1:length(sf.names), 
             continue
         end
         curr_path = sf.paths[colname]
-        allvals = filter!(x -> is_emptystr(x), 
-                readlines(curr_path))
+        T = sf.T[cole]
+        is_str = T <: AbstractString
+        allvals = [begin 
+            if is_str
+                line
+            else
+                parse(T, line)
+            end
+        end for line in filter!(x -> is_emptystr(x), readlines(curr_path)[2:end])]
         push!(rendered_cols, allvals[2:end])
     end
     if length(rendered_cols) > 1
@@ -108,7 +115,10 @@ function getindex(sf::StreamFrame, col::String, r::UnitRange{Int64} = 1:length(s
 end
 
 function setindex!(sf::StreamFrame, val::Any, col::String, r::Any)
-
+    curr_path = sf.paths[col]
+    allvals = filter!(x -> is_emptystr(x), 
+                readlines(curr_path))
+    
 end
 
 function setindex!(sf::StreamFrame, val::Any, col::Int64, r::Any)
@@ -119,4 +129,60 @@ function setindex!(sf::StreamFrame, val::Any, col::Int64, r::UnitRange{Int64})
     if length(r) > 1
 
     end
+end
+
+generate(sf::StreamFrame) = begin
+    cols = getindex(sf)
+    frame = AlgebraFrames.Frame(sf.names, sf.T, [eachcol(cols) ...])
+    cols = nothing
+    return(frame)::Frame
+end
+
+eachrow(sf::StreamFrame) = begin
+    cols = getindex(sf)
+    eachrow(cols)
+end
+
+framerows(sf::StreamFrame) = begin
+    framerows(generate(sf))
+end
+
+function filter(f::Function, sf::StreamFrame)
+    rows = framerows(sf)
+    dels = Vector{Int64}()
+    for (e, row) in enumerate(rows)
+        confirm_filt = f(row)
+        if ~(confirm_filt)
+            continue
+        end
+        push!(dels, e)
+    end
+    for e in sort(dels, lt=(>))
+        deleteat!(rows, e)
+    end
+    Frame(rows ...)::Frame
+end
+
+function filter!(f::Function, sf::StreamFrame)
+    rows = framerows(sf)
+    dels = Vector{Int64}()
+    for (e, row) in enumerate(rows)
+        confirm_filt = f(row)
+        if ~(confirm_filt)
+            continue
+        end
+        push!(dels, e)
+    end
+    for e in sort(dels, lt=(>))
+        deleteat!(sf, e)
+    end
+    nothing::Nothing
+end
+
+function filter!(f::Function, sf::StreamFrame, col::Int64)
+    dels = Vector{Int64}()
+end
+
+function filter!(f::Function, sf::StreamFrame, col::String)
+
 end
