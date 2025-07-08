@@ -1,7 +1,8 @@
 module AlgebraStreamFrames
 using AlgebraFrames
 using AlgebraFrames: Transform
-import AlgebraFrames: join!, join, deleteat!, generate
+import AlgebraFrames: join!, join, deleteat!, generate, drop!
+import Base: getindex, setindex!
 
 function infer_type(fp::String)
     if fp == ""
@@ -98,6 +99,7 @@ function is_emptystr(str::AbstractString)
     ~(isnothing(found))
 end
 
+include("frameops.jl")
 #==
 function generate(fr::StreamFrame)
 
@@ -107,56 +109,6 @@ function StreamFrame{T}() where {T}
     StreamFrame{:ff}(0, Dict{String, String}(), 
         Vector{String}(), Vector{Function}(), Vector{Type}(), 
         Vector{Transform}())::StreamFrame{:ff}
-end
-
-function join!(sf::StreamFrame, namepath::Pair{String, String})
-    lns = countlines(namepath[2])
-    if ~(length(lns) == length(sf))
-        throw(DimensionMismatch())
-    end
-    push!(sf.paths, namepath)
-    push!(sf.names, namepath[1])
-    gen = e::Int64 -> begin 
-        readlines(namepath[2])[e + 1]
-    end
-    push!(sf.gen, gen)
-    T = get_datatype(StreamDataType{Symbol(readlines(namepath[2])[1])})
-    push!(sf.T, T)
-end
-
-function join!(sf::StreamFrame, T::Type{<:Any}, namepath::Pair{String, String})
-    lns = countlines(namepath[2])
-    if ~(lns - 1 == length(sf))
-        throw(DimensionMismatch("$lns, length of file, does not equal $(length(sf))"))
-    end
-    this_p = namepath[2]
-    lines = filter!(x -> is_emptystr(x), 
-            readlines(this_p))
-    n = length(lines) - 1
-    gen = if T == String
-        e::Int64 -> begin
-                lines = filter!(x -> is_emptystr(x), 
-                    readlines(this_p))
-            lines[e + 1]
-        end
-    else
-        e::Int64 -> begin
-            lines = filter!(x -> is_emptystr(x), 
-                    readlines(this_p))
-            parse(T, lines[e + 1])
-        end
-    end
-    push!(sf.gen, gen)
-    push!(sf.paths, namepath)
-    push!(sf.names, namepath[1])
-    push!(sf.T, T)
-end
-
-function deleteat!(sf::StreamFrame, r::UnitRange{Int64}; write::Bool = true)
-    
-    if write
-
-    end
 end
 
 function StreamFrame(path::String)
