@@ -93,10 +93,10 @@ function getindex(sf::StreamFrame, cols::UnitRange{Int64} = 1:length(sf.names), 
                 parse(T, line)
             end
         end for line in filter!(x -> is_emptystr(x), readlines(curr_path)[2:end])]
-        push!(rendered_cols, allvals[2:end])
+        push!(rendered_cols, allvals)
     end
     if length(rendered_cols) > 1
-        return(hcat(renderd_cols ...))
+        return(hcat(rendered_cols ...))
     else
         return(rendered_cols[1])
     end
