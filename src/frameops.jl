@@ -60,6 +60,28 @@ function deleteat!(sf::StreamFrame, r::UnitRange{Int64})
     nothing::Nothing
 end
 
+function deleteat!(sf::StreamFrame, r::Int64 ...)
+    pathkeys = keys(sf.paths)
+    for col in sf.names
+        if ~(col in pathkeys)
+            continue
+        end
+        curr_path::String = sf.paths[col]
+        allvals = filter!(x -> is_emptystr(x), 
+                    readlines(curr_path))
+        T, allvals = (allvals[1], allvals[2:end])
+        for val in sort(dels, lt=(>))
+            deleteat!(allvals, val)
+        end
+        open(curr_path, "w") do o::IOStream
+            write(o, join((T, allvals ...), "\n"))
+        end
+    end
+    sf.length -= length(r)
+    nothing::Nothing
+end
+
+
 deleteat!(sf::StreamFrame, r::Int64) = deleteat!(sf, r:r)
 
 function drop!(af::StreamFrame, axis::Int64; delete::Bool = false)
@@ -114,22 +136,29 @@ function getindex(sf::StreamFrame, col::String, r::UnitRange{Int64} = 1:length(s
     getindex(sf, axis, r)
 end
 
-function setindex!(sf::StreamFrame, val::Any, col::String, r::Any)
+function setindex!(sf::StreamFrame, val::Any, col::Any, r::UnitRange{Int64})::Nothing
+    col = get_axis(sf, col)
     curr_path = sf.paths[col]
     allvals = filter!(x -> is_emptystr(x), 
                 readlines(curr_path))
-    
-end
-
-function setindex!(sf::StreamFrame, val::Any, col::Int64, r::Any)
-
-end
-
-function setindex!(sf::StreamFrame, val::Any, col::Int64, r::UnitRange{Int64})
-    if length(r) > 1
-
+    T, allvals = (allvals[1], allvals[2:end])
+    if typeof(val) <: AbstractVector
+        for (e, x) in enumerate(r)
+            allvals[x] = val[e]
+        end
+    else
+        for x in r
+            allvals[x] = val
+        end
     end
+    open(curr_path, "w") do o::IOStream
+        write(o, join((T, allvals ...), "\n"))
+    end
+    return
 end
+
+setindex!(sf::StreamFrame, val::Any, col::Any, r::Int64) = setindex!(sf, val, col, r:r)
+
 
 generate(sf::StreamFrame) = begin
     cols = getindex(sf)
@@ -157,8 +186,8 @@ function filter(f::Function, sf::StreamFrame)
         end
         push!(dels, e)
     end
-    for e in sort(dels, lt=(>))
-        deleteat!(rows, e)
+    for del in dels
+        deleteat!(rows, del)
     end
     Frame(rows ...)::Frame
 end
@@ -173,16 +202,7 @@ function filter!(f::Function, sf::StreamFrame)
         end
         push!(dels, e)
     end
-    for e in sort(dels, lt=(>))
-        deleteat!(sf, e)
-    end
+    sf.length -= length(dels)
+    deleteat!(sf, dels ...)
     nothing::Nothing
-end
-
-function filter!(f::Function, sf::StreamFrame, col::Int64)
-    dels = Vector{Int64}()
-end
-
-function filter!(f::Function, sf::StreamFrame, col::String)
-
 end
