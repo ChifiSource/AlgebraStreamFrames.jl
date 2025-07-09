@@ -1,3 +1,17 @@
+"""
+Created in July, 2025 by
+[chifi - an open source software dynasty.](https://github.com/orgs/ChifiSource)
+This software is MIT-licensed.
+### AlgebraStreamFrames
+`AlgebraStreamFrames` builds upon the `AlgebraFrames` package with the addition of *streaming frames*. 
+These frames are facilitated through the `StreamFrame` type, which creates a structural algebraic ORM for 
+managing data held within files on disk.
+```julia
+```
+###### provides
+```julia
+```
+"""
 module AlgebraStreamFrames
 using AlgebraFrames
 using AlgebraFrames: Transform
