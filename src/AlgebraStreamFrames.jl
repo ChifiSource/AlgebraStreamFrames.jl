@@ -89,6 +89,9 @@ end
 
 function StreamFrame(named_paths::Pair{String, String} ...)
     paths = Dict{String, String}(named_paths...)
+    if length(named_paths) < 1
+        return(StreamFrame{:ff}())
+    end
     names = collect(keys(paths))
     first_file = first(values(paths))
     if ~(isfile(first_file))
@@ -131,12 +134,6 @@ function is_emptystr(str::AbstractString)
 end
 
 include("frameops.jl")
-
-function StreamFrame{T}() where {T}
-    StreamFrame{:ff}(0, Dict{String, String}(), 
-        Vector{String}(), Vector{Function}(), Vector{Type}(), 
-        Vector{Transform}())::StreamFrame{:ff}
-end
 
 function StreamFrame(path::String)
     if ~(contains(path, "."))
