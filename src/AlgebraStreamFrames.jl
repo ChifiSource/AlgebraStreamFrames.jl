@@ -16,7 +16,7 @@ module AlgebraStreamFrames
 using AlgebraFrames
 using AlgebraFrames: Transform
 import AlgebraFrames: join!, join, deleteat!, generate, drop!, framerows
-import Base: getindex, setindex!, filter!, filter
+import Base: getindex, setindex!, filter!, filter, parse
 
 function infer_type(fp::String)
     if fp == ""
@@ -54,6 +54,11 @@ mutable struct StreamFrame{T <: Any} <: AlgebraFrames.AbstractAlgebraFrame
     end
 end
 
+function StreamFrame{T}() where {T <: Any}
+    StreamFrame{T}(0, Dict{String, String}(), 
+        Vector{String}(), Vector{Function}(), Vector{Type}())::StreamFrame{T}
+end
+
 function get_datatype(std::Type{StreamDataType{:Integer}})
     Int64
 end
@@ -68,6 +73,18 @@ end
 
 function get_datatype(std::Type{StreamDataType{:Bool}})
     Bool
+end
+
+function get_datatype(std::Type{StreamDataType{Vector{Integer}}})
+    Vector{Integer}
+end
+
+function parse(T::Type{Vector{<:Any}}, data::String)
+    
+end
+
+function parse(T::Type{Vector{<:Number}}, data::String)
+
 end
 
 function StreamFrame(named_paths::Pair{String, String} ...)
